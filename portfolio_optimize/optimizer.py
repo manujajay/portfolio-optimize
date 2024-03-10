@@ -39,4 +39,95 @@ class PortfolioOptimize:
 
     def fetch_data(self):
         """Fetches historical stock data for the given tickers."""
-        print("Fetching historical stock dat
+        print("Fetching historical stock data...")
+        end_date = datetime.today()
+        start_date = end_date - timedelta(days=365 * self.window)
+        self.data = yf.download(self.tickers, start=start_date, end=end_date)['Adj Close']
+        print("Stock data fetched.")
+
+
+    def calculate_expected_returns_and_cov(self):
+        """Calculates expected returns and the covariance matrix for the stocks."""
+        print("Calculating expected returns and covariance matrix...")
+        returns = self.data.pct_change().dropna()
+        self.returns = returns.mean()
+        self.cov_matrix = returns.cov()
+        print("Calculations completed.")
+
+    def optimize(self):
+        """
+        Optimizes the portfolio to maximize the Sharpe ratio, which is the ratio of
+        excess return to volatility.
+        """
+        print("Starting portfolio optimization...")
+        if self.data is None:
+            self.fetch_data()
+        if self.risk_free_rate is None:
+            self.fetch_risk_free_rate()
+        self.calculate_expected_returns_and_cov()
+
+        num_assets = len(self.tickers)
+        bounds = tuple((0.0, 1.0) for asset in range(num_assets))
+
+        def objective(weights):
+            port_return = np.dot(weights, self.returns) * 252
+            port_volatility = np.sqrt(np.dot(weights.T, np.dot(self.cov_matrix, weights))) * np.sqrt(252)
+            sharpe_ratio = (port_return - self.risk_free_rate) / port_volatility
+            return -sharpe_ratio  # We minimize the negative Sharpe ratio to maximize it
+
+        constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},)
+        initial_guess = num_assets * [1. / num_assets,]
+
+        result = minimize(objective, initial_guess, method='SLSQP', bounds=bounds, constraints=constraints)
+        self.weights = result.x
+        print("Optimization completed.")
+        return dict(zip(self.tickers, self.weights))
+
+    def graph(self):
+        """
+        Plots the efficient frontier for the portfolio. The efficient frontier shows
+        the highest expected return for a given level of risk.
+        """
+        if self.cov_matrix is None or self.returns is None:
+            print("You must optimize the portfolio before plotting.")
+            return
+        
+        print("Plotting the efficient frontier...")
+        num_portfolios = 10000
+        results = np.zeros((3, num_portfolios))
+
+        for i in tqdm(range(num_portfolios), desc="Simulating portfolios"):
+            weights = np.random.random(len(self.tickers))
+            weights /= np.sum(weights)
+            port_return = np.dot(weights, self.returns) * 252
+            port_volatility = np.sqrt(np.dot(weights.T, np.dot(self.cov_matrix, weights))) * np.sqrt(252)
+            sharpe_ratio = (port_return - self.risk_free_rate) / port_volatility
+            results[0,i] = port_volatility
+            results[1,i] = port_return
+            results[2,i] = sharpe_ratio
+        
+        plt.scatter(results[0,:], results[1,:], c=results[2,:], cmap='viridis')
+        plt.colorbar(label='Sharpe Ratio')
+        plt.xlabel('Volatility (Standard Deviation)')
+        plt.ylabel('Expected Return')
+        plt.title('Efficient Frontier')
+        plt.show()
+
+    def portfolio_performance(self, weights):
+        """
+        Calculates the performance of the portfolio based on the given weights.
+        
+        Returns the portfolio's expected annual return, volatility, and Sharpe ratio.
+        """
+        print("Calculating portfolio performance...")
+        port_return = np.dot(weights, self.returns) * 252
+        port_volatility = np.sqrt(np.dot(weights.T, np.dot(self.cov_matrix, weights))) * np.sqrt(252)
+        sharpe_ratio = (port_return - self.risk_free_rate) / port_volatility
+        return port_return, port_volatility, sharpe_ratio
+
+# Example usage
+tickers = ["AAPL", "MSFT", "GOOG"]
+portfolio = PortfolioOptimize(tickers=tickers, window=5, optimization='MV')
+optimal_weights = portfolio.optimize()
+print("Optimal Weights:", optimal_weights)
+portfolio.graph()

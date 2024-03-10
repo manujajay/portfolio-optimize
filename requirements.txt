@@ -2,3 +2,4 @@ yfinance
 numpy
 pandas
 matplotlib
+tqdm

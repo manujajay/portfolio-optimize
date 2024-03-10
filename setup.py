@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="portfolio-optimize",
-    version="1.1.1",  # Incrementing version to reflect new changes
+    version="1.2.1",  # Incrementing version to reflect new changes
     author="Manu Jayawardana",
     author_email="manujajayawardanais@gmail.com",
     description="A Python package for portfolio optimization. (Note: This package is under ongoing development. Contributions and corrections are welcome!)",
@@ -12,4 +12,9 @@ setup(
     packages=find_packages(),
     install_requires=["numpy", "pandas", "yfinance", "matplotlib", "tqdm"],  # Updated dependencies
     classifiers=[
-        "Programmi
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=3.6',
+)
