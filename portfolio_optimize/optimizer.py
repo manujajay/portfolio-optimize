@@ -125,6 +125,43 @@ class PortfolioOptimize:
         sharpe_ratio = (port_return - self.risk_free_rate) / port_volatility
         return port_return, port_volatility, sharpe_ratio
 
+    def backtest(self):
+        """
+        Simulates historical performance of the optimized portfolio, plots the cumulative returns,
+        and calculates key performance metrics.
+        """
+        if self.weights is None:
+            print("Optimization must be completed before backtesting.")
+            return
+
+        # Calculate daily returns of the portfolio
+        daily_returns = self.data.pct_change()
+        portfolio_daily_returns = daily_returns.dot(self.weights)
+
+        # Calculate cumulative returns
+        cumulative_returns = (1 + portfolio_daily_returns).cumprod()
+
+        # Plot cumulative returns
+        plt.figure(figsize=(10, 6))
+        cumulative_returns.plot()
+        plt.title('Portfolio Cumulative Returns')
+        plt.xlabel('Date')
+        plt.ylabel('Cumulative Returns')
+        plt.show()
+
+        # Performance metrics
+        total_return = cumulative_returns.iloc[-1] - 1
+        annualized_return = np.power(cumulative_returns.iloc[-1], 252 / len(portfolio_daily_returns)) - 1
+        annualized_volatility = portfolio_daily_returns.std() * np.sqrt(252)
+        sharpe_ratio = (annualized_return - self.risk_free_rate) / annualized_volatility
+
+        # Display performance metrics
+        print(f"Total Return: {total_return:.2%}")
+        print(f"Annualized Return: {annualized_return:.2%}")
+        print(f"Annualized Volatility: {annualized_volatility:.2%}")
+        print(f"Sharpe Ratio: {sharpe_ratio:.2f}")
+
+
 # Example usage
 tickers = ["AAPL", "MSFT", "GOOG"]
 portfolio = PortfolioOptimize(tickers=tickers, window=5, optimization='MV')
