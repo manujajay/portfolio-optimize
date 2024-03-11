@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="portfolio-optimize",
-    version="1.2.1",  # Incrementing version to reflect new changes
+    version="1.2.2",  # Incrementing version to reflect new changes
     author="Manu Jayawardana",
     author_email="manujajayawardanais@gmail.com",
     description="A Python package for portfolio optimization. (Note: This package is under ongoing development. Contributions and corrections are welcome!)",
